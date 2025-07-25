@@ -11,7 +11,7 @@ const {
 } = require("../controllers/itemController");
 
 // POST /api/items - create a new giveaway item
-router.post("/", createItem);
+router.post("/", authMiddleware, createItem);
 
 // GET /api/items - get all items
 router.get("/", getItems);

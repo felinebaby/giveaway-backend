@@ -4,7 +4,7 @@ const Item = require("../models/Item");
 // Create new item
 const createItem = async (req, res) => {
   try {
-    const newItem = new Item(req.body);
+    const newItem = new Item({ ...req.body, userId: req.user.uid }); // ✅ Inject Firebase UID
     const savedItem = await newItem.save();
     res.status(201).json(savedItem);
   } catch (error) {
@@ -39,7 +39,7 @@ const getItemById = async (req, res) => {
 
 // Get User ID
 const getItemsByUserId = async (req, res) => {
-  const userId = req.params.userId;
+  const userId = req.params.id;
 
   // restrict access to only the authenticated user
   if (req.user.uid !== userId) {
@@ -63,6 +63,7 @@ const updateItem = async (req, res) => {
 
   try {
     const item = await Item.findById(itemId);
+
     if (!item) {
       return res.status(404).json({ error: "Item not found" });
     }
@@ -103,19 +104,20 @@ const updateItem = async (req, res) => {
 const deleteItem = async (req, res) => {
   const itemId = req.params.id;
   try {
-    const item = await item.findById(itemId);
-    if (!item) {
+    const foundItem = await Item.findById(itemId);
+    if (!foundItem) {
       return res.status(404).json({ error: "Item not found" });
     }
 
     // Only the owner can delete
-    if (item.userId !== req.user.uid) {
+    if (foundItem.id !== req.user.uid) {
       res.status(403).json({ error: "Not authorized to delete this item" });
     }
+    console.log("Deleting item with ID:", req.params.id);
 
-    await item.remove();
+    await Item.findByIdAndDelete(itemId);
     res.status(200).json({ message: "Item deleted successfully" });
-  } catch {
+  } catch (error) {
     console.error("Delete item failed:", error.message);
     res.status(500).json({ error: "Server error while deleting item" });
   }
